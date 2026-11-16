@@ -1,0 +1,323 @@
+<div class="schedules-wrapper">
+  <!-- Header & Actions -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">Schedules & Tasks</h3>
+      <p class="text-muted mb-0 small">Manage your personal and collaborative shared schedules</p>
+    </div>
+    <div>
+      <button class="btn btn-primary-custom d-flex align-items-center gap-2" (click)="openCreateModal()">
+        <i class="bi bi-plus-lg"></i>
+        <span>Create Schedule</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <ul class="nav nav-pills custom-pills mb-4 gap-2">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab() === 'all'" (click)="setTab('all')">
+        <i class="bi bi-grid-fill me-1"></i> All Tasks
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab() === 'personal'" (click)="setTab('personal')">
+        <i class="bi bi-lock-fill me-1"></i> Personal
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab() === 'shared'" (click)="setTab('shared')">
+        <i class="bi bi-people-fill me-1"></i> Shared
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link text-danger" [class.active]="activeTab() === 'overdue'" (click)="setTab('overdue')">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i> Overdue
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link text-success" [class.active]="activeTab() === 'completed'" (click)="setTab('completed')">
+        <i class="bi bi-check2-all me-1"></i> Completed
+      </button>
+    </li>
+  </ul>
+
+  <!-- Filters & Search Bar -->
+  <div class="card card-custom p-3 mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input
+            type="text"
+            class="form-control border-start-0 ps-1"
+            placeholder="Search by title or description..."
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="applyFilters()"
+          />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="selectedPriority" (ngModelChange)="applyFilters()">
+          <option value="">All Priorities</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select" [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="InProgress">InProgress</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+      <div class="col-md-1 d-flex justify-content-end">
+        <button class="btn btn-outline-secondary w-100" (click)="searchQuery=''; selectedPriority=''; selectedStatus=''; applyFilters()" title="Reset Filters">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading() && filteredSchedules().length === 0" class="card card-custom p-5 text-center text-muted">
+    <i class="bi bi-journal-x display-4 text-secondary opacity-50 mb-3"></i>
+    <h5>No schedules found</h5>
+    <p class="small">Try adjusting your filters or create a new schedule to get started.</p>
+    <div class="mt-2">
+      <button class="btn btn-primary-custom btn-sm" (click)="openCreateModal()">Create Schedule</button>
+    </div>
+  </div>
+
+  <!-- Schedules Grid -->
+  <div *ngIf="!loading() && filteredSchedules().length > 0" class="row g-3">
+    <div *ngFor="let s of filteredSchedules()" class="col-md-6 col-xl-4">
+      <div class="card card-custom h-100 p-3 d-flex flex-column justify-content-between position-relative">
+        <!-- Top Status & Badges -->
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge badge-status" [ngClass]="'badge-' + s.status.toLowerCase()">
+              {{ s.status }}
+            </span>
+            <div class="d-flex align-items-center gap-1">
+              <span class="badge" [ngClass]="'badge-priority-' + s.priority.toLowerCase()">
+                {{ s.priority }}
+              </span>
+              <span *ngIf="s.scheduleType === 'Shared'" class="badge bg-secondary-subtle text-secondary" title="Shared Task">
+                <i class="bi bi-people-fill"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Title & Description -->
+          <h5 class="fw-bold text-dark mb-1 cursor-pointer hover-text-primary" (click)="viewDetails(s)">
+            {{ s.taskTitle }}
+          </h5>
+          <p class="text-muted small mb-3 text-truncate-2" style="min-height: 38px;">
+            {{ s.description || 'No description provided.' }}
+          </p>
+
+          <!-- Dates -->
+          <div class="p-2 bg-light rounded-3 mb-3 small">
+            <div class="d-flex align-items-center text-secondary mb-1">
+              <i class="bi bi-play-circle text-primary me-2"></i>
+              <span>Start: <strong>{{ s.startTime | date:'MMM d, y, h:mm a' }}</strong></span>
+            </div>
+            <div class="d-flex align-items-center text-secondary">
+              <i class="bi bi-stop-circle text-danger me-2"></i>
+              <span>End: <strong>{{ s.endTime | date:'MMM d, y, h:mm a' }}</strong></span>
+            </div>
+          </div>
+
+          <!-- Participants preview if shared -->
+          <div *ngIf="s.scheduleType === 'Shared'" class="mb-3">
+            <div class="d-flex align-items-center justify-content-between small text-muted mb-1">
+              <span>Creator: <strong class="text-dark">{{ s.creatorName }}</strong></span>
+              <span>{{ s.participants.length }} participant(s)</span>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <span *ngFor="let p of s.participants" class="badge bg-white border text-secondary small py-1 px-2" [title]="p.email">
+                <i class="bi bi-person me-1"></i>{{ p.fullName }}
+              </span>
+              <button
+                *ngIf="s.isCreator"
+                class="btn btn-sm btn-outline-primary py-0 px-2"
+                style="font-size: 11px;"
+                (click)="openAddParticipantModal(s)"
+                title="Invite more friends">
+                + Invite
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Footer Actions -->
+        <div class="pt-2 border-top d-flex align-items-center justify-content-between mt-2">
+          <button class="btn btn-link btn-sm text-decoration-none text-muted p-0" (click)="viewDetails(s)">
+            <i class="bi bi-eye me-1"></i> Details
+          </button>
+
+          <div class="d-flex align-items-center gap-2">
+            <!-- Complete button -->
+            <button
+              *ngIf="s.status !== 'Completed' && s.status !== 'Cancelled'"
+              class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 py-1"
+              (click)="completeSchedule(s.scheduleId)"
+              title="Mark Completed">
+              <i class="bi bi-check-lg"></i>
+              <span>Done</span>
+            </button>
+
+            <!-- Edit (Creator only) -->
+            <button
+              *ngIf="s.isCreator"
+              class="btn btn-sm btn-outline-secondary py-1"
+              (click)="openEditModal(s)"
+              title="Edit">
+              <i class="bi bi-pencil"></i>
+            </button>
+
+            <!-- Delete (Creator only) -->
+            <button
+              *ngIf="s.isCreator"
+              class="btn btn-sm btn-outline-danger py-1"
+              (click)="deleteSchedule(s.scheduleId)"
+              title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div *ngIf="selectedScheduleForDetails()" class="modal-backdrop-custom" (click)="closeDetails()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-status" [ngClass]="'badge-' + selectedScheduleForDetails()!.status.toLowerCase()">
+          {{ selectedScheduleForDetails()!.status }}
+        </span>
+        <h5 class="mb-0 fw-bold">{{ selectedScheduleForDetails()!.taskTitle }}</h5>
+      </div>
+      <button type="button" class="btn-close" (click)="closeDetails()"></button>
+    </div>
+
+    <div class="p-4">
+      <div class="mb-3">
+        <label class="text-muted small fw-semibold">Description</label>
+        <p class="text-dark">{{ selectedScheduleForDetails()!.description || 'No description provided.' }}</p>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">Priority</label>
+          <div>
+            <span class="badge" [ngClass]="'badge-priority-' + selectedScheduleForDetails()!.priority.toLowerCase()">
+              {{ selectedScheduleForDetails()!.priority }}
+            </span>
+          </div>
+        </div>
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">Type</label>
+          <div class="fw-semibold text-dark">{{ selectedScheduleForDetails()!.scheduleType }}</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">Start Time</label>
+          <div class="small fw-semibold">{{ selectedScheduleForDetails()!.startTime | date:'medium' }}</div>
+        </div>
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">End Time (Deadline)</label>
+          <div class="small fw-semibold text-danger">{{ selectedScheduleForDetails()!.endTime | date:'medium' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedScheduleForDetails()!.completedAt" class="p-3 bg-success-subtle text-success rounded mb-3 small">
+        <i class="bi bi-check-circle-fill me-1"></i>
+        Completed on {{ selectedScheduleForDetails()!.completedAt | date:'medium' }}
+        <span *ngIf="selectedScheduleForDetails()!.completedByName">by <strong>{{ selectedScheduleForDetails()!.completedByName }}</strong></span>
+      </div>
+
+      <!-- Participants list -->
+      <div *ngIf="selectedScheduleForDetails()!.scheduleType === 'Shared'" class="mb-3">
+        <label class="text-muted small fw-semibold mb-2">Participants</label>
+        <div class="list-group">
+          <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ selectedScheduleForDetails()!.creatorName }}</strong>
+              <span class="badge bg-primary ms-2">Creator</span>
+              <div class="text-muted small">{{ selectedScheduleForDetails()!.creatorEmail }}</div>
+            </div>
+          </div>
+          <div *ngFor="let p of selectedScheduleForDetails()!.participants" class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ p.fullName }}</strong>
+              <div class="text-muted small">{{ p.email }}</div>
+            </div>
+            <span class="badge bg-light text-secondary border">Participant</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-3 border-top d-flex justify-content-end">
+      <button class="btn btn-secondary px-4" (click)="closeDetails()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Participant Modal -->
+<div *ngIf="isAddParticipantModalOpen()" class="modal-backdrop-custom" (click)="closeAddParticipantModal()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+      <h5 class="mb-0 fw-bold">Invite Friend to Shared Task</h5>
+      <button type="button" class="btn-close" (click)="closeAddParticipantModal()"></button>
+    </div>
+    <div class="p-4">
+      <p class="text-muted small">Select an accepted friend to add to <strong>{{ currentSharedSchedule()?.taskTitle }}</strong>.</p>
+
+      <div *ngIf="getEligibleFriendsForSchedule(currentSharedSchedule()).length === 0" class="text-center py-4 text-muted small">
+        No additional eligible friends found. Add more friends in the Friends module.
+      </div>
+
+      <div *ngIf="getEligibleFriendsForSchedule(currentSharedSchedule()).length > 0">
+        <select class="form-select mb-3" [(ngModel)]="selectedFriendToAdd">
+          <option [ngValue]="null">-- Select a Friend --</option>
+          <option *ngFor="let f of getEligibleFriendsForSchedule(currentSharedSchedule())" [ngValue]="f.userId">
+            {{ f.fullName }} ({{ f.email }})
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="p-3 border-top d-flex justify-content-end gap-2">
+      <button class="btn btn-light" (click)="closeAddParticipantModal()">Cancel</button>
+      <button class="btn btn-primary-custom" [disabled]="!selectedFriendToAdd()" (click)="confirmAddParticipant()">
+        Invite Friend
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<app-task-modal
+  [isOpen]="isTaskModalOpen()"
+  [editSchedule]="editSchedule()"
+  (close)="isTaskModalOpen.set(false)"
+  (saved)="loadSchedules()">
+</app-task-modal>

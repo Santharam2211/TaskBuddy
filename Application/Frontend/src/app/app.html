@@ -1,0 +1,140 @@
+<!-- When NOT authenticated, render public views (Login/Register) directly -->
+<div *ngIf="!authService.isAuthenticated()">
+  <router-outlet></router-outlet>
+</div>
+
+<!-- When Authenticated, render main layout with Sidebar and Topbar -->
+<div *ngIf="authService.isAuthenticated()" class="app-container">
+  <!-- Mobile Sidebar Backdrop -->
+  <div
+    *ngIf="isSidebarOpen()"
+    class="position-fixed top-0 bottom-0 start-0 end-0 bg-dark opacity-50 z-index-1030 d-lg-none"
+    (click)="closeSidebar()">
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="isSidebarOpen()">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <i class="bi bi-stopwatch-fill"></i>
+      </div>
+      <div>
+        <h4 class="brand-title">TimeBuddy</h4>
+        <div class="text-muted" style="font-size: 11px; font-weight: 500;">Task & Notification System</div>
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <ul class="sidebar-nav">
+      <li>
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link-custom" (click)="closeSidebar()">
+          <i class="bi bi-speedometer2"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/schedules" routerLinkActive="active" class="nav-link-custom" (click)="closeSidebar()">
+          <i class="bi bi-calendar-check"></i>
+          <span>Schedules & Tasks</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/calendar" routerLinkActive="active" class="nav-link-custom" (click)="closeSidebar()">
+          <i class="bi bi-calendar-week"></i>
+          <span>Calendar View</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/friends" routerLinkActive="active" class="nav-link-custom" (click)="closeSidebar()">
+          <i class="bi bi-people"></i>
+          <span>Friends</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/notifications" routerLinkActive="active" class="nav-link-custom" (click)="closeSidebar()">
+          <i class="bi bi-bell"></i>
+          <span>Notifications</span>
+          <span *ngIf="notificationService.unreadCount() > 0" class="badge rounded-pill bg-danger ms-auto" style="font-size: 10px;">
+            {{ notificationService.unreadCount() }}
+          </span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Quick Create Button in Sidebar -->
+    <div class="p-3">
+      <button class="btn btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2 py-2" (click)="openQuickTask()">
+        <i class="bi bi-plus-circle-fill"></i>
+        <span>New Schedule</span>
+      </button>
+    </div>
+
+    <!-- User Profile Footer in Sidebar -->
+    <div class="p-3 border-top d-flex align-items-center justify-content-between bg-light">
+      <div class="d-flex align-items-center gap-2 text-truncate me-2">
+        <div class="user-avatar-sm flex-shrink-0">
+          {{ authService.currentUser()?.fullName?.charAt(0)?.toUpperCase() ?? 'U' }}
+        </div>
+        <div class="text-truncate">
+          <div class="fw-semibold small text-dark text-truncate">{{ authService.currentUser()?.fullName }}</div>
+          <div class="text-muted text-truncate" style="font-size: 11px;">{{ authService.currentUser()?.email }}</div>
+        </div>
+      </div>
+      <button class="btn btn-link text-danger p-1" (click)="logout()" title="Logout">
+        <i class="bi bi-box-arrow-right fs-5"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Top Navigation Bar -->
+    <header class="top-navbar">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light d-lg-none p-1 px-2 border" (click)="toggleSidebar()">
+          <i class="bi bi-list fs-5"></i>
+        </button>
+        <div class="d-none d-sm-block text-secondary small fw-medium">
+          <i class="bi bi-shield-check text-success me-1"></i> TimeBuddy Automated Monitoring Active
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3">
+        <!-- Notification Bell Icon with Badge -->
+        <a routerLink="/notifications" class="btn btn-light rounded-circle position-relative p-2 text-secondary border" title="Notifications">
+          <i class="bi bi-bell fs-5"></i>
+          <span
+            *ngIf="notificationService.unreadCount() > 0"
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+            style="font-size: 9px;">
+            {{ notificationService.unreadCount() }}
+          </span>
+        </a>
+
+        <!-- Quick Create Task button -->
+        <button class="btn btn-primary-custom btn-sm d-none d-sm-flex align-items-center gap-1" (click)="openQuickTask()">
+          <i class="bi bi-plus-lg"></i>
+          <span>Create Task</span>
+        </button>
+
+        <!-- Logout button -->
+        <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="d-none d-md-inline">Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <main class="content-body">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Global Quick Task Modal -->
+<app-task-modal
+  [isOpen]="isQuickTaskModalOpen()"
+  (close)="isQuickTaskModalOpen.set(false)"
+  (saved)="onQuickTaskSaved()">
+</app-task-modal>

@@ -1,0 +1,225 @@
+<div class="friends-wrapper">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">Friend Management</h3>
+      <p class="text-muted mb-0 small">Connect with friends to collaborate on shared task schedules</p>
+    </div>
+    <div>
+      <button class="btn btn-primary-custom d-flex align-items-center gap-2" (click)="activeTab.set('find')">
+        <i class="bi bi-person-plus-fill"></i>
+        <span>Find Friends</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Alert Message -->
+  <div *ngIf="actionMessage()" class="alert alert-dismissible fade show border-0 py-2 px-3 small d-flex align-items-center gap-2 mb-3"
+       [ngClass]="actionMessage()!.isError ? 'alert-danger' : 'alert-success'">
+    <i class="bi" [class.bi-check-circle-fill]="!actionMessage()!.isError" [class.bi-exclamation-triangle-fill]="actionMessage()!.isError"></i>
+    <div>{{ actionMessage()!.text }}</div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills custom-pills mb-4 gap-2">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab() === 'friends'" (click)="activeTab.set('friends')">
+        <i class="bi bi-people-fill me-1"></i> My Friends ({{ friends().length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link position-relative" [class.active]="activeTab() === 'requests'" (click)="activeTab.set('requests')">
+        <i class="bi bi-inbox-fill me-1"></i> Friend Requests
+        <span *ngIf="pendingReceived().length > 0" class="badge rounded-pill bg-danger ms-1">
+          {{ pendingReceived().length }}
+        </span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab() === 'find'" (click)="activeTab.set('find')">
+        <i class="bi bi-search me-1"></i> Search & Connect
+      </button>
+    </li>
+  </ul>
+
+  <!-- TAB 1: ACCEPTED FRIENDS -->
+  <div *ngIf="activeTab() === 'friends'">
+    <div *ngIf="loading()" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+
+    <div *ngIf="!loading() && friends().length === 0" class="card card-custom p-5 text-center text-muted">
+      <i class="bi bi-person-x display-4 text-secondary opacity-50 mb-3"></i>
+      <h5>No friends added yet</h5>
+      <p class="small">Search for registered users by their email to send a friend request and start collaborating.</p>
+      <div class="mt-2">
+        <button class="btn btn-primary-custom btn-sm" (click)="activeTab.set('find')">Search Friends</button>
+      </div>
+    </div>
+
+    <div *ngIf="!loading() && friends().length > 0" class="row g-3">
+      <div *ngFor="let friend of friends()" class="col-md-6 col-lg-4">
+        <div class="card card-custom p-3 d-flex flex-row align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle">
+              {{ friend.fullName.charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <h6 class="fw-bold mb-0 text-dark">{{ friend.fullName }}</h6>
+              <div class="text-muted small">{{ friend.email }}</div>
+              <span class="badge bg-success-subtle text-success mt-1" style="font-size: 10px;">
+                <i class="bi bi-check2 me-1"></i>Connected Friend
+              </span>
+            </div>
+          </div>
+          <button class="btn btn-outline-danger btn-sm p-1 px-2" (click)="removeFriend(friend.userId, friend.fullName)" title="Remove Friend">
+            <i class="bi bi-person-x"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: PENDING REQUESTS -->
+  <div *ngIf="activeTab() === 'requests'">
+    <div class="row g-4">
+      <!-- Received Requests -->
+      <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+          <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-down-left text-primary"></i>
+            <span>Received Requests ({{ pendingReceived().length }})</span>
+          </h5>
+
+          <div *ngIf="pendingReceived().length === 0" class="text-center py-4 text-muted small">
+            No pending received friend requests.
+          </div>
+
+          <div class="d-flex flex-column gap-2" *ngIf="pendingReceived().length > 0">
+            <div *ngFor="let req of pendingReceived()" class="p-3 border rounded d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-bold text-dark">{{ req.senderName }}</div>
+                <div class="text-muted small">{{ req.senderEmail }}</div>
+                <div class="text-muted" style="font-size: 11px;">{{ req.createdAt | date:'short' }}</div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-primary-custom d-flex align-items-center gap-1" (click)="acceptRequest(req.requestId)">
+                  <i class="bi bi-check-lg"></i> Accept
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" (click)="rejectRequest(req.requestId)">
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sent Requests -->
+      <div class="col-lg-6">
+        <div class="card card-custom p-4 h-100">
+          <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-arrow-up-right text-secondary"></i>
+            <span>Sent Requests ({{ pendingSent().length }})</span>
+          </h5>
+
+          <div *ngIf="pendingSent().length === 0" class="text-center py-4 text-muted small">
+            No outgoing pending friend requests.
+          </div>
+
+          <div class="d-flex flex-column gap-2" *ngIf="pendingSent().length > 0">
+            <div *ngFor="let req of pendingSent()" class="p-3 border rounded d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-bold text-dark">{{ req.receiverName }}</div>
+                <div class="text-muted small">{{ req.receiverEmail }}</div>
+                <div class="text-muted" style="font-size: 11px;">Sent on {{ req.createdAt | date:'short' }}</div>
+              </div>
+              <span class="badge bg-warning-subtle text-warning small py-1 px-2">
+                <i class="bi bi-hourglass-split me-1"></i> Pending
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: SEARCH & CONNECT -->
+  <div *ngIf="activeTab() === 'find'">
+    <div class="card card-custom p-4">
+      <h5 class="fw-bold mb-2">Search Users</h5>
+      <p class="text-muted small mb-3">Find other registered users using their email address to connect as friends.</p>
+
+      <div class="row g-2 mb-4">
+        <div class="col-md-8">
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
+            <input
+              type="email"
+              class="form-control"
+              placeholder="Enter exact or partial email address (e.g. user@example.com)..."
+              [(ngModel)]="searchEmail"
+              (keyup.enter)="searchUsers()"
+            />
+          </div>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2" (click)="searchUsers()" [disabled]="searching()">
+            <span *ngIf="searching()" class="spinner-border spinner-border-sm" role="status"></span>
+            <i class="bi bi-search" *ngIf="!searching()"></i>
+            <span>Search</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Results -->
+      <div *ngIf="searchResults().length > 0" class="d-flex flex-column gap-2">
+        <h6 class="fw-bold text-secondary mb-2">Search Results:</h6>
+        <div *ngFor="let user of searchResults()" class="p-3 border rounded d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-3">
+            <div class="avatar-circle">
+              {{ user.fullName.charAt(0).toUpperCase() }}
+            </div>
+            <div>
+              <div class="fw-bold text-dark">{{ user.fullName }}</div>
+              <div class="text-muted small">{{ user.email }}</div>
+            </div>
+          </div>
+
+          <div>
+            <!-- Status: Already Friend -->
+            <span *ngIf="user.friendStatus === 'Friend'" class="badge bg-success-subtle text-success px-3 py-2">
+              <i class="bi bi-check2 me-1"></i> Friend
+            </span>
+
+            <!-- Status: Request Sent Pending -->
+            <span *ngIf="user.friendStatus === 'PendingSent'" class="badge bg-warning-subtle text-warning px-3 py-2">
+              <i class="bi bi-clock me-1"></i> Request Sent
+            </span>
+
+            <!-- Status: Request Received Pending -->
+            <button
+              *ngIf="user.friendStatus === 'PendingReceived' && user.requestId"
+              class="btn btn-sm btn-success"
+              (click)="acceptRequest(user.requestId)">
+              <i class="bi bi-check-lg me-1"></i> Accept Request
+            </button>
+
+            <!-- Status: None -> Send Friend Request -->
+            <button
+              *ngIf="user.friendStatus === 'None' || !user.friendStatus"
+              class="btn btn-sm btn-primary-custom d-flex align-items-center gap-1"
+              (click)="sendRequest(user.email)">
+              <i class="bi bi-person-plus-fill"></i>
+              <span>Send Request</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="searchEmail && !searching() && searchResults().length === 0" class="text-center py-4 text-muted small">
+        No registered users found matching "{{ searchEmail }}".
+      </div>
+    </div>
+  </div>
+</div>

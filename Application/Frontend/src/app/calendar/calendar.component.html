@@ -1,0 +1,201 @@
+<div class="calendar-wrapper">
+  <!-- Top Control Bar -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary" (click)="navigate(-1)"><i class="bi bi-chevron-left"></i></button>
+        <button class="btn btn-outline-secondary" (click)="goToToday()">Today</button>
+        <button class="btn btn-outline-secondary" (click)="navigate(1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+
+      <h4 class="fw-bold mb-0 text-dark">
+        <span *ngIf="currentView() === 'month'">{{ getMonthTitle() }}</span>
+        <span *ngIf="currentView() === 'week'">{{ getWeekTitle() }}</span>
+        <span *ngIf="currentView() === 'day'">{{ getDayTitle() }}</span>
+      </h4>
+    </div>
+
+    <!-- View Switcher -->
+    <div class="d-flex align-items-center gap-2">
+      <div class="btn-group">
+        <button class="btn" [class.btn-primary]="currentView() === 'month'" [class.btn-outline-secondary]="currentView() !== 'month'" (click)="setView('month')">
+          Month
+        </button>
+        <button class="btn" [class.btn-primary]="currentView() === 'week'" [class.btn-outline-secondary]="currentView() !== 'week'" (click)="setView('week')">
+          Week
+        </button>
+        <button class="btn" [class.btn-primary]="currentView() === 'day'" [class.btn-outline-secondary]="currentView() !== 'day'" (click)="setView('day')">
+          Day
+        </button>
+      </div>
+      <button class="btn btn-primary-custom" (click)="isTaskModalOpen.set(true)">
+        <i class="bi bi-plus-lg me-1"></i> New Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="card card-custom p-2 px-3 mb-3 d-flex flex-row align-items-center gap-4 small flex-wrap text-muted">
+    <span class="fw-semibold text-dark"><i class="bi bi-palette me-1"></i> Legend:</span>
+    <span class="d-flex align-items-center gap-1"><span class="legend-dot dot-scheduled"></span> Scheduled</span>
+    <span class="d-flex align-items-center gap-1"><span class="legend-dot dot-inprogress"></span> In Progress</span>
+    <span class="d-flex align-items-center gap-1"><span class="legend-dot dot-overdue"></span> Overdue</span>
+    <span class="d-flex align-items-center gap-1"><span class="legend-dot dot-completed"></span> Completed</span>
+  </div>
+
+  <!-- Month View -->
+  <div *ngIf="currentView() === 'month'" class="card card-custom p-0 overflow-hidden">
+    <!-- Days Header -->
+    <div class="row g-0 text-center fw-bold bg-light py-2 border-bottom text-secondary small">
+      <div class="col">Sun</div>
+      <div class="col">Mon</div>
+      <div class="col">Tue</div>
+      <div class="col">Wed</div>
+      <div class="col">Thu</div>
+      <div class="col">Fri</div>
+      <div class="col">Sat</div>
+    </div>
+
+    <!-- Month Grid -->
+    <div class="month-grid">
+      <div
+        *ngFor="let day of monthDays()"
+        class="calendar-cell p-2"
+        [class.other-month]="!day.isCurrentMonth"
+        [class.today-cell]="day.isToday">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="day-number" [class.today-badge]="day.isToday">
+            {{ day.date.getDate() }}
+          </span>
+          <span *ngIf="day.tasks.length > 0" class="badge rounded-pill bg-light text-muted" style="font-size: 10px;">
+            {{ day.tasks.length }}
+          </span>
+        </div>
+
+        <div class="task-list-cell">
+          <div
+            *ngFor="let task of day.tasks"
+            class="calendar-task-pill"
+            [ngClass]="'pill-' + task.status.toLowerCase()"
+            (click)="selectTask(task)"
+            [title]="task.taskTitle + ' (' + task.status + ')'">
+            <span class="dot-indicator"></span>
+            <span class="text-truncate">{{ task.taskTitle }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Week View -->
+  <div *ngIf="currentView() === 'week'" class="card card-custom p-0 overflow-hidden">
+    <div class="row g-0">
+      <div *ngFor="let day of weekDays()" class="col week-col border-end p-2" [class.today-col]="day.isToday">
+        <div class="text-center pb-2 border-bottom mb-2">
+          <div class="small text-muted">{{ day.date | date:'EEE' }}</div>
+          <div class="fw-bold fs-5" [class.text-primary]="day.isToday">{{ day.date.getDate() }}</div>
+        </div>
+        <div class="d-flex flex-column gap-2" style="min-height: 420px;">
+          <div
+            *ngFor="let task of day.tasks"
+            class="card p-2 border shadow-sm cursor-pointer task-card-week"
+            [ngClass]="'border-start-' + task.status.toLowerCase()"
+            (click)="selectTask(task)">
+            <div class="fw-bold small text-dark text-truncate">{{ task.taskTitle }}</div>
+            <div class="text-muted" style="font-size: 11px;">
+              <i class="bi bi-clock me-1"></i>{{ task.endTime | date:'shortTime' }}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-1">
+              <span class="badge" [ngClass]="'badge-priority-' + task.priority.toLowerCase()" style="font-size: 9px;">
+                {{ task.priority }}
+              </span>
+              <span class="badge badge-status" [ngClass]="'badge-' + task.status.toLowerCase()" style="font-size: 9px;">
+                {{ task.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day View -->
+  <div *ngIf="currentView() === 'day'" class="card card-custom p-4">
+    <h5 class="fw-bold mb-3">Tasks for {{ getDayTitle() }}</h5>
+    <div *ngIf="getDayTasks().length === 0" class="text-center py-5 text-muted">
+      <i class="bi bi-calendar-check display-5 d-block mb-2 opacity-50"></i>
+      No tasks scheduled for this day.
+    </div>
+
+    <div *ngIf="getDayTasks().length > 0" class="d-flex flex-column gap-3">
+      <div *ngFor="let task of getDayTasks()" class="p-3 border rounded-3 d-flex justify-content-between align-items-center cursor-pointer hover-bg" (click)="selectTask(task)">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="fw-bold text-dark fs-6">{{ task.taskTitle }}</span>
+            <span class="badge badge-status" [ngClass]="'badge-' + task.status.toLowerCase()">{{ task.status }}</span>
+            <span class="badge" [ngClass]="'badge-priority-' + task.priority.toLowerCase()">{{ task.priority }}</span>
+          </div>
+          <p *ngIf="task.description" class="text-muted small mb-1">{{ task.description }}</p>
+          <div class="text-secondary small">
+            <i class="bi bi-clock me-1 text-primary"></i> {{ task.startTime | date:'shortTime' }} - {{ task.endTime | date:'shortTime' }}
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-outline-primary">View Details</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Details Modal -->
+<div *ngIf="selectedTask()" class="modal-backdrop-custom" (click)="closeTaskDetails()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+      <h5 class="mb-0 fw-bold">{{ selectedTask()!.taskTitle }}</h5>
+      <button type="button" class="btn-close" (click)="closeTaskDetails()"></button>
+    </div>
+    <div class="p-4">
+      <div class="d-flex gap-2 mb-3">
+        <span class="badge badge-status" [ngClass]="'badge-' + selectedTask()!.status.toLowerCase()">
+          {{ selectedTask()!.status }}
+        </span>
+        <span class="badge" [ngClass]="'badge-priority-' + selectedTask()!.priority.toLowerCase()">
+          {{ selectedTask()!.priority }} Priority
+        </span>
+        <span class="badge bg-secondary-subtle text-secondary">{{ selectedTask()!.scheduleType }}</span>
+      </div>
+
+      <div class="mb-3">
+        <label class="text-muted small fw-semibold">Description</label>
+        <p class="text-dark">{{ selectedTask()!.description || 'No description provided.' }}</p>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">Start Time</label>
+          <div class="small fw-semibold">{{ selectedTask()!.startTime | date:'medium' }}</div>
+        </div>
+        <div class="col-6">
+          <label class="text-muted small fw-semibold">End Time (Deadline)</label>
+          <div class="small fw-semibold text-danger">{{ selectedTask()!.endTime | date:'medium' }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedTask()!.scheduleType === 'Shared'" class="mb-3">
+        <label class="text-muted small fw-semibold">Creator</label>
+        <div>{{ selectedTask()!.creatorName }} ({{ selectedTask()!.creatorEmail }})</div>
+      </div>
+    </div>
+    <div class="p-3 border-top d-flex justify-content-end">
+      <button class="btn btn-secondary" (click)="closeTaskDetails()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<app-task-modal
+  [isOpen]="isTaskModalOpen()"
+  (close)="isTaskModalOpen.set(false)"
+  (saved)="loadSchedules()">
+</app-task-modal>

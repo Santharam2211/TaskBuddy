@@ -1,0 +1,97 @@
+<div class="notifications-wrapper">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">Notification Center</h3>
+      <p class="text-muted mb-0 small">Keep track of deadline alerts, task completions, and collaboration requests</p>
+    </div>
+    <div *ngIf="unreadCount() > 0">
+      <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2" (click)="markAllAsRead()">
+        <i class="bi bi-check2-all"></i>
+        <span>Mark All as Read</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <ul class="nav nav-pills custom-pills mb-4 gap-2">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType() === 'all'" (click)="filterType.set('all')">
+        All ({{ notifications().length }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType() === 'unread'" (click)="filterType.set('unread')">
+        Unread ({{ unreadCount() }})
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType() === 'Deadline'" (click)="filterType.set('Deadline')">
+        <i class="bi bi-alarm-fill text-danger me-1"></i> Deadlines
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType() === 'TaskCompleted'" (click)="filterType.set('TaskCompleted')">
+        <i class="bi bi-check-circle-fill text-success me-1"></i> Completed
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filterType() === 'FriendRequest'" (click)="filterType.set('FriendRequest')">
+        <i class="bi bi-people-fill text-warning me-1"></i> Friends
+      </button>
+    </li>
+  </ul>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading() && getFilteredNotifications().length === 0" class="card card-custom p-5 text-center text-muted">
+    <i class="bi bi-bell-slash display-4 text-secondary opacity-50 mb-3"></i>
+    <h5>No notifications found</h5>
+    <p class="small">You're all caught up! New deadline alerts and activity notifications will appear here.</p>
+  </div>
+
+  <!-- Notifications List -->
+  <div *ngIf="!loading() && getFilteredNotifications().length > 0" class="d-flex flex-column gap-2">
+    <div
+      *ngFor="let item of getFilteredNotifications()"
+      class="card card-custom p-3 notif-item d-flex flex-row justify-content-between align-items-center"
+      [class.unread]="!item.isRead"
+      (click)="onNotificationClick(item)">
+      <div class="d-flex align-items-center gap-3">
+        <!-- Icon based on type -->
+        <div class="notif-icon" [ngClass]="'icon-' + item.notificationType.toLowerCase()">
+          <i class="bi bi-alarm-fill" *ngIf="item.notificationType === 'Deadline'"></i>
+          <i class="bi bi-check2-circle" *ngIf="item.notificationType === 'TaskCompleted'"></i>
+          <i class="bi bi-person-plus-fill" *ngIf="item.notificationType === 'FriendRequest'"></i>
+          <i class="bi bi-envelope-open-fill" *ngIf="item.notificationType === 'ScheduleInvite'"></i>
+          <i class="bi bi-bell-fill" *ngIf="item.notificationType !== 'Deadline' && item.notificationType !== 'TaskCompleted' && item.notificationType !== 'FriendRequest' && item.notificationType !== 'ScheduleInvite'"></i>
+        </div>
+
+        <div>
+          <p class="mb-1 fw-medium text-dark">{{ item.message }}</p>
+          <div class="text-muted d-flex align-items-center gap-3" style="font-size: 12px;">
+            <span><i class="bi bi-clock me-1"></i>{{ item.createdAt | date:'medium' }}</span>
+            <span *ngIf="item.taskTitle" class="badge bg-light text-secondary border">
+              Task: {{ item.taskTitle }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <span *ngIf="!item.isRead" class="badge bg-primary rounded-pill px-2 py-1" style="font-size: 10px;">New</span>
+        <button
+          *ngIf="!item.isRead"
+          class="btn btn-sm btn-light border text-muted"
+          (click)="$event.stopPropagation(); markAsRead(item)"
+          title="Mark as Read">
+          <i class="bi bi-check-lg"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

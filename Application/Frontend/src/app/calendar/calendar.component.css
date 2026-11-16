@@ -1,0 +1,109 @@
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid var(--border-color);
+}
+
+.calendar-cell {
+  min-height: 110px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background-color: #ffffff;
+  transition: background-color 0.2s;
+}
+
+.calendar-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.other-month {
+  background-color: #fafafa;
+  opacity: 0.55;
+}
+
+.today-cell {
+  background-color: #f0fdf4;
+}
+
+.day-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.today-badge {
+  color: #15803d;
+  background-color: #bbf7d0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.task-list-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.calendar-task-pill {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  transition: transform 0.15s;
+}
+
+.calendar-task-pill:hover {
+  transform: scale(1.02);
+}
+
+.dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-scheduled { background-color: #eff6ff; color: #1e40af; }
+.pill-scheduled .dot-indicator { background-color: #3b82f6; }
+
+.pill-inprogress { background-color: #fffbeb; color: #92400e; }
+.pill-inprogress .dot-indicator { background-color: #f59e0b; }
+
+.pill-overdue { background-color: #fef2f2; color: #991b1b; }
+.pill-overdue .dot-indicator { background-color: #ef4444; }
+
+.pill-completed { background-color: #ecfdf5; color: #065f46; text-decoration: line-through; }
+.pill-completed .dot-indicator { background-color: #10b981; }
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-scheduled { background-color: #3b82f6; }
+.dot-inprogress { background-color: #f59e0b; }
+.dot-overdue { background-color: #ef4444; }
+.dot-completed { background-color: #10b981; }
+
+.border-start-scheduled { border-left: 4px solid #3b82f6 !important; }
+.border-start-inprogress { border-left: 4px solid #f59e0b !important; }
+.border-start-overdue { border-left: 4px solid #ef4444 !important; }
+.border-start-completed { border-left: 4px solid #10b981 !important; }
+
+.today-col {
+  background-color: #f0fdf4;
+}

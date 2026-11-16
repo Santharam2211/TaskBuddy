@@ -1,0 +1,128 @@
+<div *ngIf="isOpen" class="modal-backdrop-custom" (click)="onClose()">
+  <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-icon" style="width: 36px; height: 36px; font-size: 18px;">
+          <i class="bi" [class.bi-calendar-plus]="!editSchedule" [class.bi-pencil-square]="editSchedule"></i>
+        </div>
+        <h5 class="mb-0 fw-bold">{{ editSchedule ? 'Edit Schedule' : 'Create New Schedule' }}</h5>
+      </div>
+      <button type="button" class="btn-close" (click)="onClose()"></button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-4">
+      <div *ngIf="errorMessage()" class="alert alert-danger py-2 px-3 small border-0 mb-3">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ errorMessage() }}
+      </div>
+
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+        <!-- Title -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Task Title *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="e.g. Complete Final Project Presentation"
+            formControlName="taskTitle"
+            [class.is-invalid]="taskForm.get('taskTitle')?.touched && taskForm.get('taskTitle')?.invalid"
+          />
+          <div *ngIf="taskForm.get('taskTitle')?.touched && taskForm.get('taskTitle')?.invalid" class="text-danger small mt-1">
+            Task title is required (min 3 characters).
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Description</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Add details, objectives, or instructions..."
+            formControlName="description">
+          </textarea>
+        </div>
+
+        <!-- Start & End Date/Time -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold text-secondary">Start Date & Time *</label>
+            <input
+              type="datetime-local"
+              class="form-control"
+              formControlName="startTime"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold text-secondary">End Date & Time *</label>
+            <input
+              type="datetime-local"
+              class="form-control"
+              formControlName="endTime"
+            />
+          </div>
+        </div>
+
+        <!-- Priority & Schedule Type -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold text-secondary">Priority</label>
+            <select class="form-select" formControlName="priority">
+              <option value="Low">🟢 Low Priority</option>
+              <option value="Medium">🟡 Medium Priority</option>
+              <option value="High">🔴 High Priority</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold text-secondary">Schedule Type</label>
+            <select class="form-select" formControlName="scheduleType" [attr.disabled]="editSchedule ? true : null">
+              <option value="Personal">🔒 Personal (Private)</option>
+              <option value="Shared">👥 Shared (With Friends)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Participant Selection (Only if Shared) -->
+        <div *ngIf="taskForm.get('scheduleType')?.value === 'Shared'" class="mb-4">
+          <label class="form-label small fw-semibold text-secondary d-flex justify-content-between align-items-center">
+            <span>Invite Accepted Friends</span>
+            <span class="text-muted small">({{ selectedFriendIds().length }} selected)</span>
+          </label>
+
+          <div *ngIf="friends().length === 0" class="p-3 bg-light rounded text-center small text-muted">
+            <i class="bi bi-people me-1"></i> No accepted friends yet.
+            <span class="d-block mt-1">Connect with friends on the <strong>Friends</strong> page first to invite them.</span>
+          </div>
+
+          <div *ngIf="friends().length > 0" class="border rounded p-2" style="max-height: 160px; overflow-y: auto;">
+            <div *ngFor="let friend of friends()" class="form-check p-2 rounded hover-bg d-flex align-items-center justify-content-between">
+              <div>
+                <input
+                  class="form-check-input me-2"
+                  type="checkbox"
+                  [id]="'friend-' + friend.userId"
+                  [checked]="selectedFriendIds().includes(friend.userId)"
+                  (change)="toggleFriendSelection(friend.userId)"
+                />
+                <label class="form-check-label fw-medium text-dark cursor-pointer" [for]="'friend-' + friend.userId">
+                  {{ friend.fullName }}
+                </label>
+                <div class="text-muted small ps-4">{{ friend.email }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <button type="button" class="btn btn-light px-4" (click)="onClose()" [disabled]="loading()">Cancel</button>
+          <button type="submit" class="btn btn-primary-custom px-4 d-flex align-items-center gap-2" [disabled]="loading()">
+            <span *ngIf="loading()" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span>{{ editSchedule ? 'Save Changes' : 'Create Task' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

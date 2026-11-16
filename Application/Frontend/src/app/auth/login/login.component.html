@@ -1,0 +1,87 @@
+<div class="auth-wrapper d-flex align-items-center justify-content-center min-vh-100 p-3">
+  <div class="card card-custom auth-card p-4 p-md-5">
+    <div class="text-center mb-4">
+      <div class="brand-icon mx-auto mb-3" style="width: 52px; height: 52px; font-size: 26px;">
+        <i class="bi bi-stopwatch-fill"></i>
+      </div>
+      <h3 class="fw-bold text-dark mb-1">Welcome back</h3>
+      <p class="text-muted small">Sign in to your TimeBuddy account to continue</p>
+    </div>
+
+    <!-- Alerts -->
+    <div *ngIf="errorMessage()" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 small border-0" role="alert">
+      <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+
+    <div *ngIf="successMessage()" class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 small border-0" role="alert">
+      <i class="bi bi-check-circle-fill flex-shrink-0"></i>
+      <div>{{ successMessage() }}</div>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Email Field -->
+      <div class="mb-3">
+        <label class="form-label small fw-semibold text-secondary">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+          <input
+            type="email"
+            class="form-control border-start-0 ps-1"
+            placeholder="name@example.com"
+            formControlName="email"
+            [class.is-invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid"
+          />
+        </div>
+        <div *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" class="text-danger small mt-1">
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required.</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Enter a valid email address.</span>
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label small fw-semibold text-secondary mb-0">Password</label>
+        </div>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-control border-start-0 border-end-0 ps-1"
+            placeholder="••••••••"
+            formControlName="password"
+            [class.is-invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+          />
+          <button
+            type="button"
+            class="btn btn-outline-secondary border-start-0 bg-light text-muted"
+            (click)="togglePasswordVisibility()">
+            <i class="bi" [class.bi-eye]="!showPassword()" [class.bi-eye-slash]="showPassword()"></i>
+          </button>
+        </div>
+        <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="text-danger small mt-1">
+          <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required.</span>
+          <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</span>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-primary-custom w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+        [disabled]="loading()">
+        <span *ngIf="loading()" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span *ngIf="!loading()"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In</span>
+        <span *ngIf="loading()">Signing in...</span>
+      </button>
+    </form>
+
+    <div class="text-center mt-4 pt-2 border-top">
+      <p class="text-muted small mb-0">
+        Don't have an account?
+        <a routerLink="/register" class="fw-semibold text-decoration-none text-primary">Create account</a>
+      </p>
+    </div>
+  </div>
+</div>
